@@ -10,7 +10,7 @@ st.markdown("# Sales Dashboard")
 sheet = st.file_uploader("Upload Excel Spreadsheet")
 st.write("#")
 st.markdown("## Filter Data")
-ca, cb, cc = st.columns((1, 1, 1))
+ca, cb, cc, cd, ce, cf = st.columns((1, 1, 1))
 st.write("#")
 c1, c2, c3, c4, c5 = st.columns((5, 1,5, 1,5))
 
