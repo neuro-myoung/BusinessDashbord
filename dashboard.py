@@ -25,7 +25,6 @@ if sheet is not None:
 
     clean_df = pd.read_excel(sheet, sheet_name="Sales", header = header_idx, nrows = footer_idx-header_idx, usecols=range(np.shape(df)[1])[1:])
     
-
     filtcol1 = ca.selectbox("Filter Column:", ["None","Item Type", "Venue", "Sale Date"])
     if filtcol1 == "None":
         filtrule1 = cb.selectbox("Filter Rule:", [])
@@ -55,17 +54,25 @@ if sheet is not None:
 
     c3.markdown("## Revenue Over Time")
     split_check = c3.checkbox("Split Items", value=False, key=None)
-    sales_summary = clean_df.groupby(clean_df.loc[:,"Sale Date"].dt.month)['Net Revenue'].sum()
-    fig2 = px.line(x=months[0:len(sales_summary)], y=sales_summary, markers=True, 
+  
+    sales_summary = clean_df.groupby(clean_df.loc[:, "Sale Date"].dt.month)['Net Revenue'].sum().reset_index()
+    fig2 = px.line(sales_summary, x=sales_summary.loc[:, "Sale Date"], y=sales_summary.loc[:, "Net Revenue"], markers=True, 
     labels={
                      "x": "Month",
                      "y": "Net Revenue",
                  })
 
-    fig2.update_layout({
-        'plot_bgcolor': 'rgba(0,0,0,0)'
-    })
-    fig2.update_xaxes(color="#FFF")
+    fig2.update_layout(
+        {
+        'plot_bgcolor': 'rgba(0,0,0,0)',
+    },
+    yaxis_range=[0,1.1*np.max(sales_summary.loc[:, "Net Revenue"])]
+    )
+    fig2.update_xaxes(
+        color="#FFF",
+        tickvals = [1,2,3,4,5,6,7,8,9,10,11,12],
+        ticktext = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        )
     fig2.update_yaxes(color="#FFF")
     fig2.update_traces(marker_size=15)
 
