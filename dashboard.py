@@ -14,7 +14,7 @@ st.markdown("## Select Date Range")
 ca, cb, cc, cd, ce, cf = st.columns((1, 1, 1, 1, 1, 1))
 months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-tab1, tab2 = st.tabs(["Revenue", "Expenses"])
+tab1, tab2, tab3 = st.tabs(["Revenue", "Expenses", "Inventory"])
 
 if len(sheet) > 0:
     with tab1:
@@ -240,3 +240,7 @@ if len(sheet) > 0:
         clean_df2
 
         st.markdown("## :red[Total Expenses to date:] " + "$" + str(np.round(np.sum(clean_df2.loc[:, "Amount"]), 2)))
+
+
+    with tab3:
+        st.write("# In Progress...")
