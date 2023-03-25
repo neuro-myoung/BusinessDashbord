@@ -10,21 +10,20 @@ st.markdown("# Sales Dashboard")
 sheet = st.file_uploader("Upload Excel Spreadsheet", accept_multiple_files = True)
 st.write("#")
 
-tab1, tab2 = st.tabs(["Revenue", "Expenses"])
+st.markdown("## Select Date Range")
+ca, cb, cc, cd, ce, cf = st.columns((1, 1, 1, 1, 1, 1))
+months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
+tab1, tab2 = st.tabs(["Revenue", "Expenses"])
 
 if len(sheet) > 0:
     with tab1:
-        st.markdown("## Select Date Range")
-        ca, cb, cc, cd, ce, cf = st.columns((1, 1, 1, 1, 1, 1))
         st.write("#")
         c1, c2, c3, c4, c5 = st.columns((5, 1,5, 1,5))
-        months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-
-        
-
+            
         if len(sheet) > 1:
             dfList = []
+            dfList2 = []
             for i,k in enumerate(sheet):
                 df = pd.read_excel(sheet[i], sheet_name="Sales", header = None)
                 header_idx = df[df.eq("Item").any(1)].index.values[0]
@@ -32,14 +31,25 @@ if len(sheet) > 0:
                 ncol = np.shape(df)[1]
                 clean_df = pd.read_excel(sheet[i], sheet_name="Sales", header = header_idx, nrows = footer_idx-header_idx, usecols=range(np.shape(df)[1])[1:])
                 dfList.append(clean_df)
-            
+                df2 = pd.read_excel(sheet[i], sheet_name="Expenses", header = None)
+                header_idx2 = df2[df2.eq("Expense Type").any(1)].index.values[0]
+                footer_idx2 = df2[df2.eq("Total").any(1)].index.values[0]-1
+                ncol2 = np.shape(df2)[1]
+                clean_df2 = pd.read_excel(sheet[i], sheet_name="Expenses", header = header_idx2, nrows = footer_idx2-header_idx2, usecols=range(np.shape(df2)[1])[0:])
+                dfList2.append(clean_df2)
             clean_df = pd.concat(dfList, axis=0)
+            clean_df2 = pd.concat(dfList2, axis=0)
         else:  
             df = pd.read_excel(sheet[0], sheet_name="Sales", header = None)
             header_idx = df[df.eq("Item").any(1)].index.values[0]
             footer_idx = df[df.eq("Total").any(1)].index.values[0]-1
             ncol = np.shape(df)[1]
             clean_df = pd.read_excel(sheet[0], sheet_name="Sales", header = header_idx, nrows = footer_idx-header_idx, usecols=range(np.shape(df)[1])[1:])
+            df2 = pd.read_excel(sheet[0], sheet_name="Expenses", header = None)
+            header_idx2 = df2[df2.eq("Expense Type").any(1)].index.values[0]
+            footer_idx2 = df2[df2.eq("Total").any(1)].index.values[0]-1
+            ncol2 = np.shape(df2)[1]
+            clean_df2 = pd.read_excel(sheet[0], sheet_name="Expenses", header = header_idx2, nrows = footer_idx2-header_idx2, usecols=range(np.shape(df2)[1])[0:])
 
         filtyear = ca.selectbox("Select Year:", ["All"] + [str(i) for i in np.unique(clean_df.loc[:, "Sale Date"].dt.year)])
         mList = ["All"] + [months[i-1] for i in np.unique(clean_df.loc[:, "Sale Date"].dt.month)]
@@ -49,13 +59,20 @@ if len(sheet) > 0:
         if (filtyear != "All") & (filtmonth == "All"):
             sub_df = clean_df[clean_df["Sale Date"].dt.year == int(filtyear)]
             track_df = clean_df[clean_df["Sale Date"].dt.year == int(filtyear)]
+            sub_df2 = clean_df2[clean_df2["Date"].dt.year == int(filtyear)]
+            track_df2 = clean_df2[clean_df2["Date"].dt.year == int(filtyear)]
         elif (filtyear != "All") & (filtmonth != "All"):
             sub_df = clean_df[clean_df["Sale Date"].dt.year == int(filtyear)]
             track_df = sub_df
             sub_df = sub_df[sub_df["Sale Date"].dt.month == months.index(filtmonth)+1]
+            sub_df2 = clean_df2[clean_df2["Date"].dt.year == int(filtyear)]
+            track_df2 = sub_df2
+            sub_df2 = sub_df2[sub_df2["Date"].dt.month == months.index(filtmonth)+1]
         else:
             sub_df = clean_df
             track_df = clean_df
+            sub_df2 = clean_df2
+            track_df2 = clean_df2
         
         c1.markdown("## Analyze Revenue Source")
         srce = c1.selectbox("Select source:", ["Item Type", "Venue"])
@@ -143,5 +160,83 @@ if len(sheet) > 0:
         
     
     with tab2:
-        st.write("In Progress")
-   
+        st.write("#")
+
+        c1b, c2b, c3b, c4b, c5b = st.columns((5, 1,5, 1,5))
+
+        c1b.markdown("## Analyze Expense by Type")
+        srce = c1b.selectbox("Select Type:", ["Expense Type", "Search Tags"])
+
+        figb = px.pie(sub_df2, values='Amount', names=srce, title='Expenses by Type')
+
+        c1b.plotly_chart(figb, theme=None, use_container_width=True)
+
+        c3b.markdown("## Expenses Over Time")
+        optionsb = c3b.multiselect(
+            'Select Years to Plot',
+            [str(i) for i in np.unique(clean_df2.loc[:, "Date"].dt.year)])
+
+        clean_df2.loc[:, "year"] = [str(i) for i in clean_df2.loc[:, "Date"].dt.year]
+        gdfb = clean_df2.groupby("year")
+        maxvalb = 0
+
+        fig2b = px.line(
+            labels={
+                "x": "Month",
+                "y": "Expenses",
+                "year": "year"
+             })
+        fig2b.update_xaxes(
+            color="#FFF",
+            tickvals = [1,2,3,4,5,6,7,8,9,10,11,12],
+            ticktext = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            )
+        fig2b.update_yaxes(color="#FFF")
+
+        for i in range(len(optionsb)):
+            tb = gdfb.get_group(optionsb[i])
+            sales_summaryb = tb.groupby(tb.loc[:, "Date"].dt.month)['Amount'].sum().reset_index()
+            sales_summaryb.loc[:, "year"] = optionsb[i]
+
+            if np.max(sales_summaryb.loc[:, "Amount"]) > maxvalb:
+                maxvalb = np.max(sales_summaryb.loc[:, "Amount"])
+
+
+            if i == 0:
+                fig2b.add_trace(px.line(sales_summaryb, x=sales_summaryb.loc[:, "Date"], y=sales_summaryb.loc[:, "Amount"], markers=True, color=px.Constant(cmap[i]), 
+                color_discrete_map="identity").data[0])
+                
+            else:
+                fig2.add_trace(px.line(sales_summaryb, x=sales_summaryb.loc[:, "Date"], y=sales_summaryb.loc[:, "Amount"], markers=True, color=px.Constant(cmap[i]), 
+                    color_discrete_map="identity").data[0])
+            
+        fig2b.update_traces(marker_size=15)
+
+        fig2b.update_layout(
+                {
+                'plot_bgcolor': 'rgba(0,0,0,0)',
+                },
+                yaxis_range=[0,1.1*maxvalb],
+            )
+        c3b.plotly_chart(fig2b, theme=None, use_container_width=True)
+
+        c5b.markdown("## Top Expenses")
+        maxnb = c5b.number_input("How many top expenses would you like to see?", min_value=0, value= 10)
+
+        clean_df2 = clean_df2.sort_values('Amount', ascending=False)
+        fig3b = px.bar(clean_df2, x='Description', y='Amount',
+            labels={
+                        "Description": "",
+                        "Amount": "Amount ($)",
+                    })
+        fig3b.update_xaxes(tickangle = 90,automargin = True, color="#FFF")
+        fig3b.update_yaxes(color="#FFF")
+        
+        fig3b.update_layout({
+            'plot_bgcolor': 'rgba(0,0,0,0)'
+        })
+        c5b.plotly_chart(fig3b, theme=None, use_container_width=True)
+
+        clean_df2
+
+        st.markdown("## :red[Total Expenses to date:] " + "$" + str(np.round(np.sum(clean_df2.loc[:, "Amount"]), 2)))
