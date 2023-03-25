@@ -24,6 +24,7 @@ if len(sheet) > 0:
         if len(sheet) > 1:
             dfList = []
             dfList2 = []
+            dfList3 = []
             for i,k in enumerate(sheet):
                 df = pd.read_excel(sheet[i], sheet_name="Sales", header = None)
                 header_idx = df[df.eq("Item").any(1)].index.values[0]
@@ -37,8 +38,15 @@ if len(sheet) > 0:
                 ncol2 = np.shape(df2)[1]
                 clean_df2 = pd.read_excel(sheet[i], sheet_name="Expenses", header = header_idx2, nrows = footer_idx2-header_idx2, usecols=range(np.shape(df2)[1])[0:])
                 dfList2.append(clean_df2)
+                df3 = pd.read_excel(sheet[i], sheet_name="Inventory List", header = None)
+                header_idx3 = df3[df3.eq("Inventory ID").any(1)].index.values[0]
+                footer_idx3 = df3[df3.eq("Total Value").any(1)].index.values[0]-1
+                ncol3 = np.shape(df3)[1]
+                clean_df3 = pd.read_excel(sheet[i], sheet_name="Inventory List", header = header_idx3, nrows = footer_idx3-header_idx3, usecols=range(np.shape(df3)[1])[1:])
+                dfList3.append(clean_df3)
             clean_df = pd.concat(dfList, axis=0)
             clean_df2 = pd.concat(dfList2, axis=0)
+            clean_df3 = pd.concat(dfList3, axis=0)
         else:  
             df = pd.read_excel(sheet[0], sheet_name="Sales", header = None)
             header_idx = df[df.eq("Item").any(1)].index.values[0]
@@ -50,6 +58,11 @@ if len(sheet) > 0:
             footer_idx2 = df2[df2.eq("Total").any(1)].index.values[0]-1
             ncol2 = np.shape(df2)[1]
             clean_df2 = pd.read_excel(sheet[0], sheet_name="Expenses", header = header_idx2, nrows = footer_idx2-header_idx2, usecols=range(np.shape(df2)[1])[0:])
+            df3 = pd.read_excel(sheet[0], sheet_name="Inventory List", header = None)
+            header_idx3 = df3[df3.eq("Inventory ID").any(1)].index.values[0]
+            footer_idx3 = df3[df3.eq("Total Value").any(1)].index.values[0]-1
+            ncol3 = np.shape(df3)[1]
+            clean_df3 = pd.read_excel(sheet[0], sheet_name="Inventory List", header = header_idx3, nrows = footer_idx3-header_idx3, usecols=range(np.shape(df3)[1])[1:])
 
         filtyear = ca.selectbox("Select Year:", ["All"] + [str(i) for i in np.unique(clean_df.loc[:, "Sale Date"].dt.year)])
         mList = ["All"] + [months[i-1] for i in np.unique(clean_df.loc[:, "Sale Date"].dt.month)]
@@ -167,7 +180,7 @@ if len(sheet) > 0:
         c1b.markdown("## Analyze Expense Sources")
         srce = c1b.selectbox("Select Type:", ["Expense Type", "Search Tags"])
 
-        figb = px.pie(sub_df2, values='Amount', names=srce, title='Expenses by Type')
+        figb = px.pie(sub_df2, values='Amount', names=srce, title='Expenses by Source')
 
         c1b.plotly_chart(figb, theme=None, use_container_width=True)
 
@@ -243,4 +256,40 @@ if len(sheet) > 0:
 
 
     with tab3:
-        st.write("# In Progress...")
+        c1c, c2c, c3c = st.columns((5, 1, 5,))
+
+        clean_df3.loc[clean_df3.loc[:, "Class"] == "Original", "Name"] = "Original"
+
+        c1c.markdown("## Percent Inventory Value")
+        srcec = c1c.selectbox("Select Type:", ["Class", "Name"])
+
+        figc = px.pie(clean_df3, values='Inventory Value', names=srcec, title='Inventory Value by Source')
+        figc.update_traces(textposition='inside')
+        figc.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
+
+        c1c.plotly_chart(figc, theme=None, use_container_width=True)
+
+        c3c.markdown("## Quantity in stock")
+        maxnc = c3c.number_input("How many items would you like to see?", min_value=0, value= 10)
+        clean_df3 = clean_df3.sort_values('Quantity in Stock', ascending=False)
+        unit_summaryc = clean_df3.head(maxnc)
+        fig3c = px.bar(unit_summaryc, x='Name', y='Quantity in Stock',
+            labels={
+                        "Name": "",
+                        "Quantity in Stock": "Quantity (units)",
+                    })
+        fig3c.update_xaxes(tickangle = 90,automargin = True, color="#FFF")
+        fig3c.update_yaxes(color="#FFF")
+        
+        fig3c.update_layout({
+            'plot_bgcolor': 'rgba(0,0,0,0)'
+        })
+        c3c.plotly_chart(fig3c, theme=None, use_container_width=True)
+
+        st.markdown("## Flagged for Restock")
+        sub_df3 = clean_df3.query("`Quantity in Stock` < `Reorder Level`")
+        sub_df3
+
+        st.markdown("## Total Estimated Inventory Value: " + "$" + str(np.round(np.sum(clean_df3.loc[:, "Inventory Value"]), 2)))
+
+       
