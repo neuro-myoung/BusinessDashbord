@@ -164,7 +164,7 @@ if len(sheet) > 0:
 
         c1b, c2b, c3b, c4b, c5b = st.columns((5, 1,5, 1,5))
 
-        c1b.markdown("## Analyze Expense by Type")
+        c1b.markdown("## Analyze Expense Sources")
         srce = c1b.selectbox("Select Type:", ["Expense Type", "Search Tags"])
 
         figb = px.pie(sub_df2, values='Amount', names=srce, title='Expenses by Type')
