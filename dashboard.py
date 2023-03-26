@@ -97,7 +97,7 @@ if len(sheet) > 0:
         c3.markdown("## Revenue Over Time")
         options = c3.multiselect(
             'Select Years to Plot',
-            [str(i) for i in np.unique(clean_df.loc[:, "Sale Date"].dt.year)])
+            [str(i) for i in np.unique(clean_df.loc[:, "Sale Date"].dt.year)], key="a")
 
         clean_df.loc[:, "year"] = [str(i) for i in clean_df.loc[:, "Sale Date"].dt.year]
         gdf = clean_df.groupby("year")
@@ -187,7 +187,7 @@ if len(sheet) > 0:
         c3b.markdown("## Expenses Over Time")
         optionsb = c3b.multiselect(
             'Select Years to Plot',
-            [str(i) for i in np.unique(clean_df2.loc[:, "Date"].dt.year)])
+            [str(i) for i in np.unique(clean_df2.loc[:, "Date"].dt.year)], key="b")
 
         clean_df2.loc[:, "year"] = [str(i) for i in clean_df2.loc[:, "Date"].dt.year]
         gdfb = clean_df2.groupby("year")
